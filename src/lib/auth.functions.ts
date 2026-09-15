@@ -56,7 +56,7 @@ async function sendVerificationEmail(email: string, code: string): Promise<strin
       "api-key": brevoKey,
     },
     body: JSON.stringify({
-      sender: { name: "TaskFlow", email: "ra53346902803@acaonsfatima.org.br" },
+      sender: { name: "TaskFlow", email: "taskflowcod@gmail.com" },
       to: [{ email }],
       subject: "Seu código de verificação do TaskFlow",
       htmlContent: verificationEmailHtml(code),
