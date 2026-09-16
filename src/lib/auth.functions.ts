@@ -279,7 +279,19 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
       return { ok: false, error: "Usuário não encontrado ou erro ao gerar link." };
     }
 
-    const actionLink = rawLink.replace(/http:\/\/localhost:\d+/, origin);
+    let actionLink = rawLink;
+
+    if (process.env.NODE_ENV === "production") {
+      try {
+        const parsedUrl = new URL(rawLink);
+        parsedUrl.protocol = "https:";
+        parsedUrl.host = "taskflowcod.netlify.app";
+        parsedUrl.searchParams.set("redirect_to", "https://taskflowcod.netlify.app");
+        actionLink = parsedUrl.toString();
+      } catch (err) {
+        console.error("Erro ao formatar URL de produção:", err);
+      }
+    }
 
     const brevoKey = process.env["BREVO_API_KEY"];
     if (!brevoKey) {
