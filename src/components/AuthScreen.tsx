@@ -40,17 +40,19 @@ export function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-  // Redireciona de localhost para o Netlify se o Supabase responder com o token
-  if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
-    if (window.location.hostname === "localhost") {
-      const currentHash = window.location.hash;
-      window.location.href = `https://taskflowcod.netlify.app/${currentHash}`;
-      return;
-    }
+useEffect(() => {
+  const hash = typeof window !== "undefined" ? window.location.hash : "";
+
+  // 1. Caso o Supabase tenha retornado via localhost (redireciona para o Netlify)
+  if (hash.includes("access_token") && window.location.hostname === "localhost") {
+    window.location.href = `https://taskflowcod.netlify.app/${hash}`;
+    return;
   }
 
-  // ... resto do seu useEffect atual (se houver)
+  // 2. Trata o token_hash ou access_token recebido para exibir a tela de Nova Senha
+  if (hash.includes("token_hash") || hash.includes("type=recovery") || hash.includes("access_token")) {
+    setMode("newpassword"); // ou o nome exato do seu estado para a tela de redefinir senha
+  }
 }, []);
 
   const validate = () => {
