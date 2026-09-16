@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import {
   CheckSquare,
@@ -43,18 +44,36 @@ export function AuthScreen() {
 useEffect(() => {
   const hash = typeof window !== "undefined" ? window.location.hash : "";
 
-  // 1. Caso o Supabase tenha retornado via localhost (redireciona para o Netlify)
+  // 1. Caso venha via localhost, redireciona para o Netlify
   if (hash.includes("access_token") && window.location.hostname === "localhost") {
     window.location.href = `https://taskflowcod.netlify.app/${hash}`;
     return;
   }
 
-  // 2. Trata o token_hash ou access_token recebido para exibir a tela de Nova Senha
-  if (hash.includes("token_hash") || hash.includes("type=recovery") || hash.includes("access_token")) {
-    setMode("newpassword"); // ou o nome exato do seu estado para a tela de redefinir senha
+  // 2. Lê os parâmetros do hash
+  const params = new URLSearchParams(hash.replace("#", "?"));
+  const tokenHash = params.get("token_hash");
+  const type = params.get("type");
+
+  if (tokenHash && type === "recovery") {
+    setMode("newpassword");
+
+    // Valida o token com o Supabase para criar a sessão do usuário
+    supabase.auth
+      .verifyOtp({
+        token_hash: tokenHash,
+        type: "recovery",
+      })
+      .then(({ error }: { error: { message: string } | null }) => {
+        if (error) {
+          console.error("Erro ao validar token:", error.message);
+          setErrors({ form: "O link de recuperação expirou ou é inválido." });
+        }
+      });
+  } else if (hash.includes("access_token")) {
+    setMode("newpassword");
   }
 }, []);
-
   const validate = () => {
     const e: Record<string, string> = {};
     if (mode === "signup" && !name.trim()) e.name = "Nome é obrigatório";
