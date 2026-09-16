@@ -1,5 +1,5 @@
-import { LayoutDashboard, Sun, ListTodo, CalendarDays, BarChart3 } from 'lucide-react';
-import type { Page } from './Sidebar';
+import { LayoutDashboard, Sun, ListTodo, CalendarDays, BarChart3 } from "lucide-react";
+import type { Page } from "./Sidebar";
 
 interface BottomNavProps {
   current: Page;
@@ -7,11 +7,11 @@ interface BottomNavProps {
 }
 
 const ITEMS: { id: Page; label: string; icon: typeof LayoutDashboard }[] = [
-  { id: 'dashboard', label: 'Visão Geral', icon: LayoutDashboard },
-  { id: 'myday', label: 'Meu Dia', icon: Sun },
-  { id: 'tasks', label: 'Tarefas', icon: ListTodo },
-  { id: 'calendar', label: 'Agenda', icon: CalendarDays },
-  { id: 'analytics', label: 'Análises', icon: BarChart3 },
+  { id: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
+  { id: "myday", label: "Meu Dia", icon: Sun },
+  { id: "tasks", label: "Tarefas", icon: ListTodo },
+  { id: "calendar", label: "Agenda", icon: CalendarDays },
+  { id: "analytics", label: "Análises", icon: BarChart3 },
 ];
 
 export function BottomNav({ current, onNavigate }: BottomNavProps) {
@@ -26,10 +26,10 @@ export function BottomNav({ current, onNavigate }: BottomNavProps) {
               key={item.id}
               onClick={() => onNavigate(item.id)}
               className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all ${
-                active ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'
+                active ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-slate-500"
               }`}
             >
-              <Icon className={`h-5 w-5 ${active ? 'scale-110' : ''} transition-transform`} />
+              <Icon className={`h-5 w-5 ${active ? "scale-110" : ""} transition-transform`} />
               <span className="text-[10px] font-medium">{item.label}</span>
             </button>
           );

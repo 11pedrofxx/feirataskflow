@@ -73,14 +73,25 @@ async function sendVerificationEmail(email: string, code: string): Promise<strin
 }
 
 async function issueCode(
-  admin: { from: (t: string) => any },
+  admin: Record<string, unknown>,
   email: string,
   userId: string | null,
 ): Promise<{ code?: string; error?: string }> {
-  await admin.from("otp_codes").update({ used: true }).eq("email", email).eq("used", false);
+  const client = admin as unknown as {
+    from: (table: string) => {
+      update: (values: Record<string, unknown>) => {
+        eq: (col1: string, val1: unknown) => {
+          eq: (col2: string, val2: unknown) => Promise<unknown>;
+        };
+      };
+      insert: (values: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+    };
+  };
+
+  await client.from("otp_codes").update({ used: true }).eq("email", email).eq("used", false);
 
   const code = generate6DigitCode();
-  const { error } = await admin.from("otp_codes").insert({
+  const { error } = await client.from("otp_codes").insert({
     email,
     code,
     user_id: userId,
@@ -123,7 +134,7 @@ export const registerUser = createServerFn({ method: "POST" })
     }
 
     const userId = created?.user?.id ?? null;
-    const { code, error: otpError } = await issueCode(supabaseAdmin as never, email, userId);
+    const { code, error: otpError } = await issueCode(supabaseAdmin as unknown as Record<string, unknown>, email, userId);
     if (!code) return { ok: false, error: otpError ?? "Erro ao gerar o código." };
 
     const sendError = await sendVerificationEmail(email, code);
@@ -153,7 +164,7 @@ export const resendCode = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { code, error: otpError } = await issueCode(
-      supabaseAdmin as never,
+      supabaseAdmin as unknown as Record<string, unknown>,
       email,
       (previous?.user_id as string | null) ?? null,
     );
@@ -213,7 +224,8 @@ export const verifyCode = createServerFn({ method: "POST" })
         .from("otp_codes")
         .update({ attempts: newAttempts, used: remaining <= 0 })
         .eq("id", row.id);
-      if (remaining <= 0) return { ok: false, error: "Muitas tentativas. Solicite um novo código." };
+      if (remaining <= 0)
+        return { ok: false, error: "Muitas tentativas. Solicite um novo código." };
       return { ok: false, error: `Código incorreto. ${remaining} tentativa(s) restante(s).` };
     }
 
@@ -232,6 +244,75 @@ export const verifyCode = createServerFn({ method: "POST" })
         console.error("Falha ao confirmar e-mail:", confirmError.message);
         return { ok: false, error: "Não foi possível confirmar a conta." };
       }
+    }
+
+    return { ok: true };
+  });
+
+export const requestPasswordReset = createServerFn({ method: "POST" })
+  .inputValidator((input: { email: string }) => input)
+  .handler(async ({ data }): Promise<Result> => {
+    const email = (data.email ?? "").trim().toLowerCase();
+    if (!email) return { ok: false, error: "Informe um e-mail válido." };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const origin =
+      process.env.NODE_ENV === "production"
+        ? "https://taskflowcod.netlify.app"
+        : "http://localhost:8080";
+
+    const { data: linkData, error: linkError } =
+      await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: {
+          redirectTo: origin,
+        },
+      });
+
+    const actionLink = (linkData as unknown as { properties?: { action_link?: string } })
+      ?.properties?.action_link;
+
+    if (linkError || !actionLink) {
+      console.error("Erro ao gerar link de redefinição:", linkError?.message);
+      return { ok: false, error: "Usuário não encontrado ou erro ao gerar link." };
+    }
+
+    const brevoKey = process.env["BREVO_API_KEY"];
+    if (!brevoKey) {
+      return { ok: false, error: "BREVO_API_KEY ausente no arquivo .env." };
+    }
+
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": brevoKey,
+      },
+      body: JSON.stringify({
+        sender: { name: "TaskFlow", email: "taskflowcod@gmail.com" },
+        to: [{ email }],
+        subject: "Redefinição de Senha - TaskFlow",
+        htmlContent: `
+          <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #fff; padding: 30px;">
+            <div style="max-width: 480px; margin: 0 auto; background: #111; padding: 24px; border-radius: 12px; border: 1px solid #222;">
+              <h2 style="color: #34d399; margin-top: 0;">Recuperação de Senha</h2>
+              <p style="color: #a1a1aa;">Você solicitou a redefinição da sua senha no TaskFlow. Clique no botão abaixo para criar uma nova senha:</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${actionLink}" style="background: #059669; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block;">Redefinir Senha</a>
+              </div>
+              <p style="color: #71717a; font-size: 12px;">Se você não solicitou este e-mail, pode ignorar este aviso.</p>
+            </div>
+          </div>
+        `,
+      }),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error("Erro no envio pelo Brevo:", errBody);
+      return { ok: false, error: "Não foi possível enviar o e-mail via Brevo." };
     }
 
     return { ok: true };

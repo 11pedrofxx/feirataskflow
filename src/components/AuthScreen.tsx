@@ -1,114 +1,145 @@
-import { useState, useEffect } from 'react';
-import { CheckSquare, Mail, Lock, User, ArrowRight, Sparkles, Calendar, BarChart3, Bot, ShieldCheck, KeyRound } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/contexts/ToastContext';
-import { Spinner } from '@/components/tf-ui';
-import DotField from './DotField.jsx';
+import { useState, useEffect } from "react";
+import {
+  CheckSquare,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Sparkles,
+  Calendar,
+  BarChart3,
+  Bot,
+  ShieldCheck,
+  KeyRound,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/contexts/ToastContext";
+import { Spinner } from "@/components/tf-ui";
+import DotField from "./DotField.jsx";
+import { requestPasswordReset } from "@/lib/auth.functions";
 
-type Mode = 'login' | 'signup' | 'verify' | 'reset' | 'newpassword';
+type Mode = "login" | "signup" | "verify" | "reset" | "newpassword";
 
 export function AuthScreen() {
-  const { signIn, signUp, resetPassword, sendOtp, verifyOtp, updatePassword, passwordRecovery, clearPasswordRecovery } = useAuth();
+  const {
+    signIn,
+    signUp,
+    sendOtp,
+    verifyOtp,
+    updatePassword,
+    passwordRecovery,
+    clearPasswordRecovery,
+  } = useAuth();
   const { showToast } = useToast();
-  const [mode, setMode] = useState<Mode>('login');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [code, setCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
+  const [mode, setMode] = useState<Mode>("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (passwordRecovery) {
-      setMode('newpassword');
+      setMode("newpassword");
     }
   }, [passwordRecovery]);
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (mode === 'signup' && !name.trim()) e.name = 'Nome é obrigatório';
-    if (mode !== 'verify' && mode !== 'newpassword') {
-      if (!email) e.email = 'E-mail é obrigatório';
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'E-mail inválido';
+    if (mode === "signup" && !name.trim()) e.name = "Nome é obrigatório";
+    if (mode !== "verify" && mode !== "newpassword") {
+      if (!email) e.email = "E-mail é obrigatório";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "E-mail inválido";
     }
-    if (mode === 'login' || mode === 'signup') {
-      if (!password) e.password = 'Senha é obrigatória';
-      else if (password.length < 6) e.password = 'Mínimo de 6 caracteres';
+    if (mode === "login" || mode === "signup") {
+      if (!password) e.password = "Senha é obrigatória";
+      else if (password.length < 6) e.password = "Mínimo de 6 caracteres";
     }
-    if (mode === 'verify') {
-      if (!code.trim()) e.code = 'Código é obrigatório';
-      else if (!/^\d{6}$/.test(code.trim())) e.code = 'Digite os 6 dígitos';
+    if (mode === "verify") {
+      if (!code.trim()) e.code = "Código é obrigatório";
+      else if (!/^\d{6}$/.test(code.trim())) e.code = "Digite os 6 dígitos";
     }
-    if (mode === 'newpassword') {
-      if (!newPassword) e.newPassword = 'Senha é obrigatória';
-      else if (newPassword.length < 6) e.newPassword = 'Mínimo de 6 caracteres';
+    if (mode === "newpassword") {
+      if (!newPassword) e.newPassword = "Senha é obrigatória";
+      else if (newPassword.length < 6) e.newPassword = "Mínimo de 6 caracteres";
     }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate() || loading) return;
     setLoading(true);
     try {
-      if (mode === 'login') {
+      if (mode === "login") {
         const { error } = await signIn(email, password);
         if (error) {
-          showToast(error, 'error');
+          showToast(error, "error");
         } else {
-          showToast('Bem-vindo de volta!', 'success');
+          showToast("Bem-vindo de volta!", "success");
         }
-      } else if (mode === 'signup') {
+      } else if (mode === "signup") {
         const { error } = await signUp(email, password, name.trim());
         if (error) {
-          showToast(error, 'error');
+          showToast(error, "error");
         } else {
-          setCode('');
-          setMode('verify');
+          setCode("");
+          setMode("verify");
         }
-      } else if (mode === 'verify') {
+      } else if (mode === "verify") {
         const { error } = await verifyOtp(email, code.trim());
         if (error) {
-          showToast(error, 'error');
+          showToast(error, "error");
         } else {
-          showToast('E-mail verificado! Fazendo login...', 'success');
+          showToast("E-mail verificado! Fazendo login...", "success");
           const { error: loginError } = await signIn(email, password);
           if (loginError) {
-            showToast('E-mail verificado! Faça login para continuar.', 'success');
-            setMode('login');
+            showToast("E-mail verificado! Faça login para continuar.", "success");
+            setMode("login");
           }
         }
-      } else if (mode === 'reset') {
-        const { error } = await resetPassword(email);
-        if (error) showToast(error, 'error');
-        else {
-          showToast('E-mail de recuperação enviado! Verifique sua caixa de entrada.', 'success');
-          setMode('login');
+      } else if (mode === "reset") {
+        const res = await requestPasswordReset({ data: { email } });
+        if (res.ok) {
+          showToast("E-mail de recuperação enviado! Verifique sua caixa de entrada.", "success");
+          setMode("login");
+        } else {
+          const errMessage = res.error ?? "Erro ao enviar e-mail de recuperação.";
+          if (errMessage.toLowerCase().includes("rate limit")) {
+            showToast("Aguarde 60 segundos antes de solicitar um novo link.", "error");
+          } else {
+            showToast(errMessage, "error");
+          }
         }
-      } else if (mode === 'newpassword') {
+      } else if (mode === "newpassword") {
         const { error } = await updatePassword(newPassword);
         if (error) {
-          showToast(error, 'error');
+          showToast(error, "error");
         } else {
-          showToast('Senha atualizada com sucesso!', 'success');
+          showToast("Senha atualizada com sucesso!", "success");
           clearPasswordRecovery();
-          setNewPassword('');
+          setNewPassword("");
+          setMode("login");
         }
       }
+    } catch {
+      showToast("Ocorreu uma falha ao processar sua solicitação.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleResendCode = async () => {
+    if (loading) return;
     setLoading(true);
     try {
       const { error } = await sendOtp(email);
       if (error) {
-        showToast(error, 'error');
+        showToast(error, "error");
       } else {
-        showToast('Novo código enviado!', 'success');
+        showToast("Novo código enviado!", "success");
       }
     } finally {
       setLoading(false);
@@ -116,27 +147,27 @@ export function AuthScreen() {
   };
 
   const titles: Record<Mode, string> = {
-    login: 'Entrar',
-    signup: 'Criar conta',
-    verify: 'Verifique seu e-mail',
-    reset: 'Recuperar senha',
-    newpassword: 'Nova senha',
+    login: "Entrar",
+    signup: "Criar conta",
+    verify: "Verifique seu e-mail",
+    reset: "Recuperar senha",
+    newpassword: "Nova senha",
   };
 
   const subtitles: Record<Mode, string> = {
-    login: 'Acesse sua conta para continuar',
-    signup: 'Comece a organizar suas tarefas hoje',
+    login: "Acesse sua conta para continuar",
+    signup: "Comece a organizar suas tarefas hoje",
     verify: `Enviamos um código de 6 dígitos para ${email}. Digite-o abaixo para validar sua conta.`,
-    reset: 'Enviaremos um link para seu e-mail',
-    newpassword: 'Digite sua nova senha para acessar sua conta',
+    reset: "Enviaremos um link para seu e-mail",
+    newpassword: "Digite sua nova senha para acessar sua conta",
   };
 
   const buttonLabels: Record<Mode, string> = {
-    login: 'Entrar',
-    signup: 'Criar conta',
-    verify: 'Verificar código',
-    reset: 'Enviar link',
-    newpassword: 'Atualizar senha',
+    login: "Entrar",
+    signup: "Criar conta",
+    verify: "Verificar código",
+    reset: "Enviar link",
+    newpassword: "Atualizar senha",
   };
 
   return (
@@ -172,17 +203,23 @@ export function AuthScreen() {
             </div>
           </div>
           <h2 className="text-4xl font-bold leading-tight mb-4">
-            Organize seu dia.<br />Conquiste suas metas.
+            Organize seu dia.
+            <br />
+            Conquiste suas metas.
           </h2>
           <p className="text-white/80 text-lg mb-10 max-w-md">
-            Um assistente de produtividade completo que ajuda você a priorizar, planejar e executar suas tarefas com inteligência.
+            Um assistente de produtividade completo que ajuda você a priorizar, planejar e executar
+            suas tarefas com inteligência.
           </p>
           <div className="space-y-4">
             {[
-              { icon: Sparkles, text: 'Assistente IA para sugerir prioridades e organizar seu dia' },
-              { icon: Calendar, text: 'Calendário e planejador diário com arrastar e soltar' },
-              { icon: BarChart3, text: 'Análises de produtividade com gráficos detalhados' },
-              { icon: Bot, text: 'Divisão automática de tarefas em subtarefas' },
+              {
+                icon: Sparkles,
+                text: "Assistente IA para sugerir prioridades e organizar seu dia",
+              },
+              { icon: Calendar, text: "Calendário e planejador diário com arrastar e soltar" },
+              { icon: BarChart3, text: "Análises de produtividade com gráficos detalhados" },
+              { icon: Bot, text: "Divisão automática de tarefas em subtarefas" },
             ].map((f, i) => {
               const Icon = f.icon;
               return (
@@ -208,15 +245,11 @@ export function AuthScreen() {
             <h1 className="text-xl font-bold text-white">TaskFlow</h1>
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-1">
-            {titles[mode]}
-          </h2>
-          <p className="text-sm text-zinc-400 mb-6 break-words">
-            {subtitles[mode]}
-          </p>
+          <h2 className="text-2xl font-bold text-white mb-1">{titles[mode]}</h2>
+          <p className="text-sm text-zinc-400 mb-6 break-words">{subtitles[mode]}</p>
 
           <div className="space-y-4">
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <div>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
@@ -226,14 +259,16 @@ export function AuthScreen() {
                     placeholder="Seu nome"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSubmit();
+                    }}
                   />
                 </div>
                 {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
               </div>
             )}
 
-            {mode !== 'verify' && mode !== 'newpassword' && (
+            {mode !== "verify" && mode !== "newpassword" && (
               <div>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
@@ -243,14 +278,16 @@ export function AuthScreen() {
                     placeholder="seu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSubmit();
+                    }}
                   />
                 </div>
                 {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
               </div>
             )}
 
-            {(mode === 'login' || mode === 'signup') && (
+            {(mode === "login" || mode === "signup") && (
               <div>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
@@ -260,14 +297,16 @@ export function AuthScreen() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSubmit();
+                    }}
                   />
                 </div>
                 {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
               </div>
             )}
 
-            {mode === 'verify' && (
+            {mode === "verify" && (
               <div>
                 <div className="relative">
                   <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
@@ -278,8 +317,10 @@ export function AuthScreen() {
                     className="input pl-11 text-center text-lg tracking-[0.5em] font-semibold bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
                     placeholder="000000"
                     value={code}
-                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSubmit();
+                    }}
                     autoFocus
                   />
                 </div>
@@ -287,7 +328,7 @@ export function AuthScreen() {
               </div>
             )}
 
-            {mode === 'newpassword' && (
+            {mode === "newpassword" && (
               <div>
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
@@ -297,16 +338,26 @@ export function AuthScreen() {
                     placeholder="Nova senha"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSubmit();
+                    }}
                     autoFocus
                   />
                 </div>
-                {errors.newPassword && <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>}
+                {errors.newPassword && (
+                  <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>
+                )}
               </div>
             )}
 
-            <button onClick={handleSubmit} disabled={loading} className="btn-primary w-full py-3 bg-emerald-600 hover:bg-emerald-500 transition-colors">
-              {loading ? <Spinner className="h-5 w-5" /> : (
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="btn-primary w-full py-3 bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center justify-center disabled:opacity-50"
+            >
+              {loading ? (
+                <Spinner className="h-5 w-5" />
+              ) : (
                 <>
                   {buttonLabels[mode]}
                   <ArrowRight className="h-4 w-4 ml-2" />
@@ -316,50 +367,69 @@ export function AuthScreen() {
           </div>
 
           <div className="mt-6 text-center text-sm text-zinc-400">
-            {mode === 'login' && (
+            {mode === "login" && (
               <>
-                <button onClick={() => setMode('reset')} className="text-emerald-500 hover:underline">
+                <button
+                  onClick={() => setMode("reset")}
+                  className="text-emerald-500 hover:underline"
+                >
                   Esqueceu sua senha?
                 </button>
                 <p className="mt-3">
-                  Não tem conta?{' '}
-                  <button onClick={() => setMode('signup')} className="text-emerald-500 font-medium hover:underline">
+                  Não tem conta?{" "}
+                  <button
+                    onClick={() => setMode("signup")}
+                    className="text-emerald-500 font-medium hover:underline"
+                  >
                     Cadastre-se
                   </button>
                 </p>
               </>
             )}
-            {mode === 'signup' && (
+            {mode === "signup" && (
               <p>
-                Já tem conta?{' '}
-                <button onClick={() => setMode('login')} className="text-emerald-500 font-medium hover:underline">
+                Já tem conta?{" "}
+                <button
+                  onClick={() => setMode("login")}
+                  className="text-emerald-500 font-medium hover:underline"
+                >
                   Entrar
                 </button>
               </p>
             )}
-            {mode === 'verify' && (
+            {mode === "verify" && (
               <>
                 <p>
-                  Não recebeu o código?{' '}
-                  <button onClick={handleResendCode} disabled={loading} className="text-emerald-500 font-medium hover:underline disabled:opacity-50">
+                  Não recebeu o código?{" "}
+                  <button
+                    onClick={handleResendCode}
+                    disabled={loading}
+                    className="text-emerald-500 font-medium hover:underline disabled:opacity-50"
+                  >
                     Reenviar código
                   </button>
                 </p>
                 <p className="mt-3">
-                  <button onClick={() => setMode('login')} className="text-emerald-500 font-medium hover:underline">
+                  <button
+                    onClick={() => setMode("login")}
+                    className="text-emerald-500 font-medium hover:underline"
+                  >
                     Voltar para login
                   </button>
                 </p>
               </>
             )}
-            {mode === 'reset' && (
+            {mode === "reset" && (
               <p>
-                <button onClick={() => setMode('login')} className="text-emerald-500 font-medium hover:underline">
+                <button
+                  onClick={() => setMode("login")}
+                  className="text-emerald-500 font-medium hover:underline"
+                >
                   Voltar para login
                 </button>
               </p>
             )}
-            {mode === 'newpassword' && (
+            {mode === "newpassword" && (
               <p className="text-xs">
                 Após atualizar sua senha, você será redirecionado para o app.
               </p>

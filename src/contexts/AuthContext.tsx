@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { registerUser, resendCode, verifyCode } from '@/lib/auth.functions';
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { registerUser, resendCode, verifyCode } from "@/lib/auth.functions";
 
 interface AuthContextValue {
   user: User | null;
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (async () => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        if (event === 'PASSWORD_RECOVERY') {
+        if (event === "PASSWORD_RECOVERY") {
           setPasswordRecovery(true);
         }
         setLoading(false);
@@ -50,11 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message === 'Email not confirmed') {
-        return { error: 'E-mail não verificado. Verifique sua caixa de entrada.' };
+      if (error.message === "Email not confirmed") {
+        return { error: "E-mail não verificado. Verifique sua caixa de entrada." };
       }
-      if (error.message === 'Invalid login credentials') {
-        return { error: 'E-mail ou senha incorretos.' };
+      if (error.message === "Invalid login credentials") {
+        return { error: "E-mail ou senha incorretos." };
       }
       return { error: error.message };
     }
@@ -64,11 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const result = await registerUser({ data: { email, password, name } });
-      if (!result.ok) return { error: result.error ?? 'Não foi possível criar a conta.' };
+      if (!result.ok) return { error: result.error ?? "Não foi possível criar a conta." };
       return { error: null };
     } catch (err) {
-      console.error('registerUser failed:', err);
-      return { error: err instanceof Error ? err.message : 'Não foi possível criar a conta.' };
+      console.error("registerUser failed:", err);
+      return { error: err instanceof Error ? err.message : "Não foi possível criar a conta." };
     }
   };
 
@@ -86,22 +86,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const sendOtp = async (email: string) => {
     try {
       const result = await resendCode({ data: { email } });
-      if (!result.ok) return { error: result.error ?? 'Não foi possível enviar o código.' };
+      if (!result.ok) return { error: result.error ?? "Não foi possível enviar o código." };
       return { error: null };
     } catch (err) {
-      console.error('resendCode failed:', err);
-      return { error: err instanceof Error ? err.message : 'Não foi possível enviar o código.' };
+      console.error("resendCode failed:", err);
+      return { error: err instanceof Error ? err.message : "Não foi possível enviar o código." };
     }
   };
 
   const verifyOtp = async (email: string, token: string) => {
     try {
       const result = await verifyCode({ data: { email, code: token } });
-      if (!result.ok) return { error: result.error ?? 'Não foi possível verificar o código.' };
+      if (!result.ok) return { error: result.error ?? "Não foi possível verificar o código." };
       return { error: null };
     } catch (err) {
-      console.error('verifyCode failed:', err);
-      return { error: err instanceof Error ? err.message : 'Não foi possível verificar o código.' };
+      console.error("verifyCode failed:", err);
+      return { error: err instanceof Error ? err.message : "Não foi possível verificar o código." };
     }
   };
 
@@ -138,6 +138,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

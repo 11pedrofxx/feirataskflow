@@ -1,28 +1,54 @@
-import { useMemo, useState } from 'react';
-import { Plus, Trash2, Briefcase, GraduationCap, User, Rocket, Dumbbell, Wallet, Folder } from 'lucide-react';
-import { useTask } from '@/contexts/TaskContext';
-import { useToast } from '@/contexts/ToastContext';
-import { Modal } from '@/components/tf-ui/Modal';
-import { Input } from '@/components/tf-ui/Input';
-import { ConfirmDialog } from '@/components/tf-ui/ConfirmDialog';
-import { todayString } from '@/lib/date';
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Trash2,
+  Briefcase,
+  GraduationCap,
+  User,
+  Rocket,
+  Dumbbell,
+  Wallet,
+  Folder,
+} from "lucide-react";
+import { useTask } from "@/contexts/TaskContext";
+import { useToast } from "@/contexts/ToastContext";
+import { Modal } from "@/components/tf-ui/Modal";
+import { Input } from "@/components/tf-ui/Input";
+import { ConfirmDialog } from "@/components/tf-ui/ConfirmDialog";
+import { todayString } from "@/lib/date";
 
 const ICONS: Record<string, typeof Briefcase> = {
-  Briefcase, GraduationCap, User, Rocket, Dumbbell, Wallet, Folder,
+  Briefcase,
+  GraduationCap,
+  User,
+  Rocket,
+  Dumbbell,
+  Wallet,
+  Folder,
 };
 
 const COLORS = [
-  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#14b8a6',
-  '#ec4899', '#6366f1', '#f97316', '#06b6d4', '#84cc16', '#a855f7',
+  "#3b82f6",
+  "#8b5cf6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#14b8a6",
+  "#ec4899",
+  "#6366f1",
+  "#f97316",
+  "#06b6d4",
+  "#84cc16",
+  "#a855f7",
 ];
 
 export function Categories() {
   const { categories, tasks, createCategory, deleteCategory } = useTask();
   const { showToast } = useToast();
   const [showCreate, setShowCreate] = useState(false);
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [color, setColor] = useState(COLORS[0]);
-  const [icon, setIcon] = useState('Folder');
+  const [icon, setIcon] = useState("Folder");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const taskCount = useMemo(() => {
@@ -35,21 +61,21 @@ export function Categories() {
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      showToast('Nome da categoria é obrigatório.', 'error');
+      showToast("Nome da categoria é obrigatório.", "error");
       return;
     }
     await createCategory(name.trim(), color, icon);
-    showToast('Categoria criada!', 'success');
-    setName('');
+    showToast("Categoria criada!", "success");
+    setName("");
     setColor(COLORS[0]);
-    setIcon('Folder');
+    setIcon("Folder");
     setShowCreate(false);
   };
 
   const handleDelete = async () => {
     if (!deleteId) return;
     await deleteCategory(deleteId);
-    showToast('Categoria excluída.', 'success');
+    showToast("Categoria excluída.", "success");
     setDeleteId(null);
   };
 
@@ -58,7 +84,9 @@ export function Categories() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Categorias</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Organize suas tarefas por categoria</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+            Organize suas tarefas por categoria
+          </p>
         </div>
         <button onClick={() => setShowCreate(true)} className="btn-primary">
           <Plus className="h-4 w-4" /> Nova
@@ -73,11 +101,16 @@ export function Categories() {
             <div key={cat.id} className="card p-4 group hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ backgroundColor: cat.color + '20' }}>
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: cat.color + "20" }}
+                  >
                     <Icon className="h-5 w-5" style={{ color: cat.color }} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{cat.name}</h3>
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {cat.name}
+                    </h3>
                     <p className="text-xs text-slate-400 dark:text-slate-500">{count} tarefa(s)</p>
                   </div>
                 </div>
@@ -96,9 +129,20 @@ export function Categories() {
       </div>
 
       {/* Create modal */}
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Nova Categoria" size="sm">
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Nova Categoria"
+        size="sm"
+      >
         <div className="space-y-4">
-          <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Saúde" autoFocus />
+          <Input
+            label="Nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Saúde"
+            autoFocus
+          />
           <div>
             <label className="label">Cor</label>
             <div className="flex flex-wrap gap-2">
@@ -106,8 +150,8 @@ export function Categories() {
                 <button
                   key={c}
                   onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-lg transition-all ${color === c ? 'ring-2 ring-offset-2 dark:ring-offset-black scale-110' : ''}`}
-                  style={{ backgroundColor: c, boxShadow: color === c ? `0 0 0 2px ${c}` : 'none' }}
+                  className={`w-8 h-8 rounded-lg transition-all ${color === c ? "ring-2 ring-offset-2 dark:ring-offset-black scale-110" : ""}`}
+                  style={{ backgroundColor: c, boxShadow: color === c ? `0 0 0 2px ${c}` : "none" }}
                 />
               ))}
             </div>
@@ -119,7 +163,7 @@ export function Categories() {
                 <button
                   key={name}
                   onClick={() => setIcon(name)}
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all ${icon === name ? 'bg-green-100 dark:bg-green-900/30 ring-2 ring-green-500' : 'bg-slate-100 dark:bg-[#1c1c1c] hover:bg-slate-200 dark:hover:bg-[#303030]'}`}
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all ${icon === name ? "bg-green-100 dark:bg-green-900/30 ring-2 ring-green-500" : "bg-slate-100 dark:bg-[#1c1c1c] hover:bg-slate-200 dark:hover:bg-[#303030]"}`}
                 >
                   <Icon className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                 </button>
@@ -127,8 +171,12 @@ export function Categories() {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setShowCreate(false)} className="btn-secondary flex-1">Cancelar</button>
-            <button onClick={handleCreate} className="btn-primary flex-1">Criar</button>
+            <button onClick={() => setShowCreate(false)} className="btn-secondary flex-1">
+              Cancelar
+            </button>
+            <button onClick={handleCreate} className="btn-primary flex-1">
+              Criar
+            </button>
           </div>
         </div>
       </Modal>

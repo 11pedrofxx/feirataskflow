@@ -1,18 +1,18 @@
-import { useMemo } from 'react';
-import { useTask } from '@/contexts/TaskContext';
-import { todayString } from '@/lib/date';
+import { useMemo } from "react";
+import { useTask } from "@/contexts/TaskContext";
+import { todayString } from "@/lib/date";
 
 export function ProductivityChart() {
   const { tasks } = useTask();
 
   const data = useMemo(() => {
     const days: { label: string; date: string; completed: number; created: number }[] = [];
-    const weekdaysShort = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+    const weekdaysShort = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = d.toISOString().split("T")[0];
       days.push({
         label: weekdaysShort[d.getDay()],
         date: dateStr,
@@ -23,11 +23,11 @@ export function ProductivityChart() {
 
     tasks.forEach((task) => {
       if (task.completed_at) {
-        const completedDate = task.completed_at.split('T')[0];
+        const completedDate = task.completed_at.split("T")[0];
         const day = days.find((d) => d.date === completedDate);
         if (day) day.completed++;
       }
-      const createdDate = task.created_at.split('T')[0];
+      const createdDate = task.created_at.split("T")[0];
       const day = days.find((d) => d.date === createdDate);
       if (day) day.created++;
     });
@@ -42,8 +42,12 @@ export function ProductivityChart() {
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Produtividade (7 dias)</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Tarefas concluídas vs. criadas</p>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Produtividade (7 dias)
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Tarefas concluídas vs. criadas
+          </p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="flex items-center gap-1.5">
@@ -80,7 +84,9 @@ export function ProductivityChart() {
                   style={{ height: `${createdHeight}%` }}
                 />
               </div>
-              <span className={`text-[10px] font-medium ${isToday ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'}`}>
+              <span
+                className={`text-[10px] font-medium ${isToday ? "text-green-600 dark:text-green-400" : "text-slate-400 dark:text-slate-500"}`}
+              >
                 {day.label}
               </span>
             </div>
