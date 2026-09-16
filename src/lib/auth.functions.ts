@@ -283,13 +283,18 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
 
     if (process.env.NODE_ENV === "production") {
       try {
-        const parsedUrl = new URL(rawLink);
-        parsedUrl.protocol = "https:";
-        parsedUrl.host = "taskflowcod.netlify.app";
-        parsedUrl.searchParams.set("redirect_to", "https://taskflowcod.netlify.app");
-        actionLink = parsedUrl.toString();
+        const supabaseProjectUrl = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"] || "";
+        const parsedSupabaseUrl = new URL(supabaseProjectUrl);
+        const parsedLink = new URL(rawLink);
+
+        // Troca o domínio do Netlify para o domínio do Supabase na rota de verificação (/auth/v1/verify)
+        parsedLink.protocol = parsedSupabaseUrl.protocol;
+        parsedLink.host = parsedSupabaseUrl.host;
+        parsedLink.searchParams.set("redirect_to", "https://taskflowcod.netlify.app");
+        
+        actionLink = parsedLink.toString();
       } catch (err) {
-        console.error("Erro ao formatar URL de produção:", err);
+        console.error("Erro ao formatar URL com Supabase host:", err);
       }
     }
 
