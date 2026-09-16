@@ -271,17 +271,19 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
         },
       });
 
-    const actionLink = (linkData as unknown as { properties?: { action_link?: string } })
+    const rawLink = (linkData as unknown as { properties?: { action_link?: string } })
       ?.properties?.action_link;
 
-    if (linkError || !actionLink) {
+    if (linkError || !rawLink) {
       console.error("Erro ao gerar link de redefinição:", linkError?.message);
       return { ok: false, error: "Usuário não encontrado ou erro ao gerar link." };
     }
 
+    const actionLink = rawLink.replace(/http:\/\/localhost:\d+/, origin);
+
     const brevoKey = process.env["BREVO_API_KEY"];
     if (!brevoKey) {
-      return { ok: false, error: "BREVO_API_KEY ausente no arquivo .env." };
+      return { ok: false, error: "BREVO_API_KEY ausente nas variáveis de ambiente." };
     }
 
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
