@@ -271,32 +271,15 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
         },
       });
 
-    const rawLink = (linkData as unknown as { properties?: { action_link?: string } })
-      ?.properties?.action_link;
+    const hashedToken = linkData?.properties?.hashed_token;
 
-    if (linkError || !rawLink) {
-      console.error("Erro ao gerar link de redefinição:", linkError?.message);
+    if (linkError || !hashedToken) {
+      console.error("Erro ao gerar token de redefinição:", linkError?.message);
       return { ok: false, error: "Usuário não encontrado ou erro ao gerar link." };
     }
 
-    let actionLink = rawLink;
-
-    if (process.env.NODE_ENV === "production") {
-      try {
-        const supabaseProjectUrl = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"] || "";
-        const parsedSupabaseUrl = new URL(supabaseProjectUrl);
-        const parsedLink = new URL(rawLink);
-
-        // Troca o domínio do Netlify para o domínio do Supabase na rota de verificação (/auth/v1/verify)
-        parsedLink.protocol = parsedSupabaseUrl.protocol;
-        parsedLink.host = parsedSupabaseUrl.host;
-        parsedLink.searchParams.set("redirect_to", "https://taskflowcod.netlify.app");
-        
-        actionLink = parsedLink.toString();
-      } catch (err) {
-        console.error("Erro ao formatar URL com Supabase host:", err);
-      }
-    }
+    // Cria o link direto para a sua aplicação no Netlify evitando redirecionamento para localhost
+    const actionLink = `${origin}/#token_hash=${hashedToken}&type=recovery`;
 
     const brevoKey = process.env["BREVO_API_KEY"];
     if (!brevoKey) {
