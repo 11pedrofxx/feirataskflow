@@ -41,10 +41,17 @@ export function AuthScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (passwordRecovery) {
-      setMode("newpassword");
+  // Redireciona de localhost para o Netlify se o Supabase responder com o token
+  if (typeof window !== "undefined" && window.location.hash.includes("access_token")) {
+    if (window.location.hostname === "localhost") {
+      const currentHash = window.location.hash;
+      window.location.href = `https://taskflowcod.netlify.app/${currentHash}`;
+      return;
     }
-  }, [passwordRecovery]);
+  }
+
+  // ... resto do seu useEffect atual (se houver)
+}, []);
 
   const validate = () => {
     const e: Record<string, string> = {};
