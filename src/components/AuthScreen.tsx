@@ -12,6 +12,8 @@ import {
   Bot,
   ShieldCheck,
   KeyRound,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/contexts/ToastContext";
@@ -32,6 +34,7 @@ export function AuthScreen() {
     clearPasswordRecovery,
   } = useAuth();
   const { showToast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,39 +44,40 @@ export function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-useEffect(() => {
-  const hash = typeof window !== "undefined" ? window.location.hash : "";
+  useEffect(() => {
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
 
-  // 1. Caso venha via localhost, redireciona para o Netlify
-  if (hash.includes("access_token") && window.location.hostname === "localhost") {
-    window.location.href = `https://taskflowcod.netlify.app/${hash}`;
-    return;
-  }
+    // 1. Caso venha via localhost, redireciona para o Netlify
+    if (hash.includes("access_token") && window.location.hostname === "localhost") {
+      window.location.href = `https://taskflowcod.netlify.app/${hash}`;
+      return;
+    }
 
-  // 2. Lê os parâmetros do hash
-  const params = new URLSearchParams(hash.replace("#", "?"));
-  const tokenHash = params.get("token_hash");
-  const type = params.get("type");
+    // 2. Lê os parâmetros do hash
+    const params = new URLSearchParams(hash.replace("#", "?"));
+    const tokenHash = params.get("token_hash");
+    const type = params.get("type");
 
-  if (tokenHash && type === "recovery") {
-    setMode("newpassword");
+    if (tokenHash && type === "recovery") {
+      setMode("newpassword");
 
-    // Valida o token com o Supabase para criar a sessão do usuário
-    supabase.auth
-      .verifyOtp({
-        token_hash: tokenHash,
-        type: "recovery",
-      })
-      .then(({ error }: { error: { message: string } | null }) => {
-        if (error) {
-          console.error("Erro ao validar token:", error.message);
-          setErrors({ form: "O link de recuperação expirou ou é inválido." });
-        }
-      });
-  } else if (hash.includes("access_token")) {
-    setMode("newpassword");
-  }
-}, []);
+      // Valida o token com o Supabase para criar a sessão do usuário
+      supabase.auth
+        .verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        })
+        .then(({ error }: { error: { message: string } | null }) => {
+          if (error) {
+            console.error("Erro ao validar token:", error.message);
+            setErrors({ form: "O link de recuperação expirou ou é inválido." });
+          }
+        });
+    } else if (hash.includes("access_token")) {
+      setMode("newpassword");
+    }
+  }, []);
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (mode === "signup" && !name.trim()) e.name = "Nome é obrigatório";
@@ -283,7 +287,7 @@ useEffect(() => {
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
                   <input
                     type="text"
-                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
+                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500 w-full"
                     placeholder="Seu nome"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -302,7 +306,7 @@ useEffect(() => {
                   <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
                   <input
                     type="email"
-                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
+                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500 w-full"
                     placeholder="seu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -320,8 +324,8 @@ useEffect(() => {
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
                   <input
-                    type="password"
-                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
+                    type={showPassword ? "text" : "password"}
+                    className="input pl-11 pr-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500 w-full"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -329,6 +333,17 @@ useEffect(() => {
                       if (e.key === "Enter") handleSubmit();
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4.5 w-4.5" />
+                    ) : (
+                      <Eye className="h-4.5 w-4.5" />
+                    )}
+                  </button>
                 </div>
                 {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
               </div>
@@ -342,7 +357,7 @@ useEffect(() => {
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
-                    className="input pl-11 text-center text-lg tracking-[0.5em] font-semibold bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
+                    className="input pl-11 text-center text-lg tracking-[0.5em] font-semibold bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500 w-full"
                     placeholder="000000"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
@@ -361,8 +376,8 @@ useEffect(() => {
                 <div className="relative">
                   <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-zinc-400" />
                   <input
-                    type="password"
-                    className="input pl-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500"
+                    type={showPassword ? "text" : "password"}
+                    className="input pl-11 pr-11 bg-zinc-900/80 border-zinc-800 text-white placeholder-zinc-500 w-full"
                     placeholder="Nova senha"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
@@ -371,6 +386,17 @@ useEffect(() => {
                     }}
                     autoFocus
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4.5 w-4.5" />
+                    ) : (
+                      <Eye className="h-4.5 w-4.5" />
+                    )}
+                  </button>
                 </div>
                 {errors.newPassword && (
                   <p className="text-xs text-red-500 mt-1">{errors.newPassword}</p>
