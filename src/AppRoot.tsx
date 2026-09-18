@@ -92,9 +92,17 @@ function AppContent() {
     );
   }
 
-  if (!user || passwordRecovery) {
+if (!user || passwordRecovery) {
     return <AuthScreen />;
-  }
+}
+
+// Check if URL hash indicates password recovery flow
+const hash = typeof window !== "undefined" ? window.location.hash : "";
+const isRecoveryLink = hash.includes("type=recovery") || hash.includes("token_hash");
+
+if (isRecoveryLink) {
+    return <AuthScreen />;
+}
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black flex">
