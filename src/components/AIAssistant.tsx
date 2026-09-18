@@ -27,7 +27,12 @@ export function AIAssistant({ open, onClose }: { open: boolean; onClose: () => v
       text: "Olá! Sou seu assistente de produtividade. Posso analisar suas tarefas, sugerir prioridades, organizar seu dia e muito mais.\n\nDica: você pode escrever seu planejamento assim:\n\nDia:\nManhã: Academia + estudos\nTarde: Reunião + relatório\nNoite: Jantar com a família\n\n...e eu adiciono tudo automaticamente!",
     },
   ]);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState("");
+  const [isPlanningModalOpen, setIsPlanningModalOpen] = useState(false);
+  const [morningTasks, setMorningTasks] = useState("");
+  const [afternoonTasks, setAfternoonTasks] = useState("");
+  const [nightTasks, setNightTasks] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,6 +75,26 @@ export function AIAssistant({ open, onClose }: { open: boolean; onClose: () => v
         }
       }
     }, 400);
+  };
+
+  const fillPlanningTemplate = () => {
+    const template = "Dia:\nManhã:\nTarde:\nNoite:";
+    setInput(template);
+    inputRef.current?.focus();
+  };
+
+  const handlePlanningSubmit = () => {
+    const message = `Crie as seguintes tarefas para hoje como itens estritamente SEPARADOS. Não junte tudo em uma tarefa só:
+- Manhã: ${morningTasks}
+- Tarde: ${afternoonTasks}
+- Noite: ${nightTasks}`;
+
+    setMessages((prev) => [...prev, { role: "user", text: message }]);
+    setIsPlanningModalOpen(false);
+    setMorningTasks("");
+    setAfternoonTasks("");
+    setNightTasks("");
+    send(message);
   };
 
   if (!open) return null;
@@ -139,6 +164,78 @@ export function AIAssistant({ open, onClose }: { open: boolean; onClose: () => v
                 {prompt}
               </button>
             ))}
+            <button
+              onClick={() => setIsPlanningModalOpen(true)}
+              className="text-xs px-3 py-1.5 rounded-full bg-white dark:bg-[#1c1c1c] border border-slate-200 dark:border-[#303030] text-slate-600 dark:text-slate-300 hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all"
+            >
+              Criar planejamento diário
+            </button>
+          </div>
+        )}
+
+        {/* Planning Modal */}
+        {isPlanningModalOpen && (
+          <div
+            className="fixed inset-0 z-40 flex items-center justify-center pt-8"
+            onClick={(e) => e.target.className.includes("modal") && setIsPlanningModalOpen(false)}
+          >
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div
+              className="relative bg-white dark:bg-[#1c1c1c] rounded-xl p-6 w-full sm:w-96 max-h-[80vh] overflow-y-auto transform scale-100 opacity-100 transition-all duration-200"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
+            >
+              <h2 id="modal-title" className="text-xl font-semibold text-slate-800 dark:text-slate-100 mb-4 text-center">
+                Planejamento Diário
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Manhã</label>
+                  <input
+                    value={morningTasks}
+                    onChange={(e) => setMorningTasks(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#303030] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-[#0b0b0b] dark:text-slate-100"
+                    placeholder="Ex: Academia + estudos"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Tarde</label>
+                  <input
+                    value={afternoonTasks}
+                    onChange={(e) => setAfternoonTasks(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#303030] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-[#0b0b0b] dark:text-slate-100"
+                    placeholder="Ex: Reunião + relatório"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-1">Noite</label>
+                  <input
+                    value={nightTasks}
+                    onChange={(e) => setNightTasks(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 dark:border-[#303030] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:bg-[#0b0b0b] dark:text-slate-100"
+                    placeholder="Ex: Jantar com a família"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setIsPlanningModalOpen(false)}
+                  className="px-4 py-2 rounded-lg border border-slate-300 dark:border-[#303030] text-slate-600 dark:text-slate-300 hover:text-white hover:bg-slate-600 dark:hover:bg-[#2a2a2a] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handlePlanningSubmit}
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 text-white font-medium hover:opacity-90 transition-opacity"
+                >
+                  Criar Planejamento
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
